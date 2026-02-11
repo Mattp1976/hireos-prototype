@@ -1,22 +1,34 @@
-import * as ResizablePrimitive from "react-resizable-panels";
 import { cn } from "@/lib/utils";
 
 function ResizablePanelGroup({
   className,
+  children,
   ...props
-}: React.ComponentProps<typeof ResizablePrimitive.default>) {
-  return <div className={cn("flex h-full w-full", className)} {...props} />;
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("flex h-full w-full", className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
-function ResizablePanel(props: Record<string, unknown>) {
-  return <div {...props} />;
+function ResizablePanel({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("flex-1", className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
 function ResizableHandle({
   withHandle,
   className,
   ...props
-}: { withHandle?: boolean; className?: string } & Record<string, unknown>) {
+}: React.HTMLAttributes<HTMLDivElement> & { withHandle?: boolean }) {
   return (
     <div
       className={cn("bg-border relative flex w-px items-center justify-center", className)}
