@@ -11,7 +11,7 @@ const STAGES: ApplicationStage[] = [
   'rejected',
 ];
 
-const STAGE_LABELS: { [key in ApplicationStage]: string } = {
+const STAGE_LABELS: Record<string, string> = {
   new: 'New',
   screening: 'Screening',
   shortlisted: 'Shortlisted',
@@ -21,7 +21,7 @@ const STAGE_LABELS: { [key in ApplicationStage]: string } = {
   rejected: 'Rejected',
 };
 
-const STAGE_COLORS: { [key in ApplicationStage]: string } = {
+const STAGE_COLORS: Record<string, string> = {
   new: 'bg-slate-600',
   screening: 'bg-blue-600',
   shortlisted: 'bg-indigo-600',
