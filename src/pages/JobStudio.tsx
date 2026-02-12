@@ -1,228 +1,254 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useMemo } from 'react';
+import { useJobRoles } from '../hooks/useJobRoles';
+import { useApplications } from '../hooks/useApplications';
 
-interface Job {
-  id: string;
-  title: string;
-  department: string;
-  osProfileType: string;
-  applicantCount: number;
-  daysOpen: number;
-  status: "Active" | "Paused" | "Draft";
-}
-
-interface OSProfile {
-  analyticalThinking: number;
-  creativeProblemSolving: number;
-  structuredExecution: number;
-  collaborativeCommunication: number;
-  adaptiveResilience: number;
-  strategicVision: number;
-}
-
-const sampleJobs: Job[] = [
-  { id: "1", title: "Senior Software Engineer", department: "Engineering", osProfileType: "Technical Leader", applicantCount: 24, daysOpen: 12, status: "Active" },
-  { id: "2", title: "Product Manager", department: "Product", osProfileType: "Strategic Vision", applicantCount: 18, daysOpen: 8, status: "Active" },
-  { id: "3", title: "UX Designer", department: "Design", osProfileType: "Creative Director", applicantCount: 31, daysOpen: 5, status: "Active" },
-  { id: "4", title: "Operations Director", department: "Operations", osProfileType: "Operations Manager", applicantCount: 12, daysOpen: 15, status: "Paused" },
-  { id: "5", title: "HR Business Partner", department: "People", osProfileType: "People Manager", applicantCount: 0, daysOpen: 0, status: "Draft" },
-];
-
-const templates = [
-  { id: "tech", name: "Technical Leader", profile: { analyticalThinking: 85, creativeProblemSolving: 75, structuredExecution: 80, collaborativeCommunication: 75, adaptiveResilience: 70, strategicVision: 80 } },
-  { id: "creative", name: "Creative Director", profile: { analyticalThinking: 65, creativeProblemSolving: 90, structuredExecution: 70, collaborativeCommunication: 85, adaptiveResilience: 75, strategicVision: 85 } },
-  { id: "ops", name: "Operations Manager", profile: { analyticalThinking: 80, creativeProblemSolving: 60, structuredExecution: 90, collaborativeCommunication: 80, adaptiveResilience: 75, strategicVision: 70 } },
-  { id: "people", name: "People Manager", profile: { analyticalThinking: 70, creativeProblemSolving: 70, structuredExecution: 75, collaborativeCommunication: 90, adaptiveResilience: 85, strategicVision: 75 } },
-];
-
-const languageSuggestions = [
-  { original: "rockstar", suggestion: "Consider 'high-performer' or 'expert'", type: "warning" as const },
-  { original: "move fast and break things", suggestion: "Consider 'move efficiently while maintaining quality'", type: "warning" as const },
-  { original: "guru", suggestion: "Consider 'subject matter expert'", type: "warning" as const },
-  { original: "Gender-neutral language", suggestion: "All pronouns are inclusive", type: "success" as const },
-];
-
-function statusColor(s: string) {
-  if (s === "Active") return "bg-green-100 text-green-700";
-  if (s === "Paused") return "bg-amber-100 text-amber-700";
-  return "bg-gray-100 text-gray-500";
-}
-
-export function JobStudio() {
-  const [osProfile, setOsProfile] = useState<OSProfile>({
-    analyticalThinking: 75, creativeProblemSolving: 60, structuredExecution: 80,
-    collaborativeCommunication: 70, adaptiveResilience: 65, strategicVision: 55,
-  });
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [channels, setChannels] = useState({
-    linkedin: true, indeed: true, careers: true, referrals: false, university: false, diversity: true,
-  });
-  const [jobDescription, setJobDescription] = useState(
-    "We are looking for a rockstar developer who can move fast and break things. Must be a guru in full-stack development."
-  );
-
-  const activeCount = sampleJobs.filter((j) => j.status === "Active").length;
-  const totalApps = sampleJobs.reduce((s, j) => s + j.applicantCount, 0);
-
-  const applyTemplate = (t: typeof templates[0]) => {
-    setOsProfile(t.profile);
-    setSelectedTemplate(t.id);
-  };
-
-  const dimensions: { label: string; key: keyof OSProfile }[] = [
-    { label: "Analytical Thinking", key: "analyticalThinking" },
-    { label: "Creative Problem-Solving", key: "creativeProblemSolving" },
-    { label: "Structured Execution", key: "structuredExecution" },
-    { label: "Collaborative Communication", key: "collaborativeCommunication" },
-    { label: "Adaptive Resilience", key: "adaptiveResilience" },
-    { label: "Strategic Vision", key: "strategicVision" },
+function JobRoleCard({ jobRole, applicationCount }: any) {
+  const cognitiveScores = [
+    { label: 'A', value: jobRole.ideal_analytical },
+    { label: 'C', value: jobRole.ideal_creative },
+    { label: 'S', value: jobRole.ideal_strategic },
+    { label: 'E', value: jobRole.ideal_empathetic },
+    { label: 'Sy', value: jobRole.ideal_systematic },
+    { label: 'Ad', value: jobRole.ideal_adaptive },
   ];
 
+  const salaryRange =
+    jobRole.salary_min && jobRole.salary_max
+      ? `$${(jobRole.salary_min / 1000).toFixed(0)}k - $${(jobRole.salary_max / 1000).toFixed(0)}k`
+      : 'Not specified';
+
+  const statusColors: { [key: string]: string } = {
+    open: 'bg-emerald-900/30 text-emerald-300 border-emerald-600/50',
+    closed: 'bg-red-900/30 text-red-300 border-red-600/50',
+    draft: 'bg-amber-900/30 text-amber-300 border-amber-600/50',
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Job Studio</h1>
-        <p className="text-sm text-gray-500 mt-1">Create OS-first job descriptions and manage postings</p>
+    <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 hover:border-indigo-500/30 transition">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-bold text-white">{jobRole.title}</h3>
+          <p className="text-sm text-slate-400">{jobRole.department || 'Engineering'}</p>
+        </div>
+        <span
+          className={`px-3 py-1 border rounded-full text-xs font-medium ${statusColors[jobRole.status] || 'bg-slate-700 text-slate-300 border-slate-600'}`}
+        >
+          {jobRole.status?.charAt(0).toUpperCase() + jobRole.status?.slice(1) || 'Unknown'}
+        </span>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: "Total Positions", value: sampleJobs.length },
-          { label: "Active Jobs", value: activeCount },
-          { label: "Total Applicants", value: totalApps },
-          { label: "Avg Per Job", value: Math.round(totalApps / sampleJobs.length) },
-        ].map((s) => (
-          <Card key={s.label} className="border border-gray-200">
-            <CardContent className="pt-4 pb-3 px-4">
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium">{s.label}</p>
-              <p className="text-xl font-bold text-gray-900 mt-0.5">{s.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+      {jobRole.description && (
+        <p className="text-sm text-slate-300 mb-4 line-clamp-2">{jobRole.description}</p>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-slate-700">
+        <div>
+          <p className="text-xs text-slate-400 mb-1">Location</p>
+          <p className="text-sm font-medium text-white">{jobRole.location || 'Remote'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-400 mb-1">Salary Range</p>
+          <p className="text-sm font-medium text-white">{salaryRange}</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {/* Job Cards */}
-        <div className="col-span-2 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-700">Active Jobs</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {sampleJobs.map((job) => (
-              <Card key={job.id} className="border border-gray-200 hover:shadow-sm transition-shadow">
-                <CardContent className="pt-4 pb-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{job.title}</p>
-                      <p className="text-[11px] text-gray-500">{job.department}</p>
-                    </div>
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${statusColor(job.status)}`}>{job.status}</span>
-                  </div>
-                  <p className="text-[10px] text-indigo-600 font-medium mb-2">{job.osProfileType}</p>
-                  <div className="flex gap-4">
-                    <div>
-                      <p className="text-[10px] text-gray-400">Applicants</p>
-                      <p className="text-sm font-bold text-gray-900">{job.applicantCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-gray-400">Days Open</p>
-                      <p className="text-sm font-bold text-gray-900">{job.daysOpen}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Ideal Cognitive Profile */}
+      <div className="mb-6">
+        <h4 className="text-xs font-semibold text-slate-300 mb-3 uppercase">Ideal Profile</h4>
+        <div className="grid grid-cols-6 gap-2">
+          {cognitiveScores.map((score) => (
+            <div key={score.label} className="text-center">
+              <div className="relative w-full aspect-square mb-1">
+                <div className="absolute inset-0 bg-slate-700 rounded-full"></div>
+                <div
+                  className="absolute inset-0 bg-gradient-to-b from-indigo-600 to-indigo-500 rounded-full"
+                  style={{
+                    clipPath: `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.cos(-Math.PI / 2 + (score.value * Math.PI * 2))}% ${50 + 50 * Math.sin(-Math.PI / 2 + (score.value * Math.PI * 2))}%)`,
+                  }}
+                ></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">
+                    {Math.round(score.value * 10)}
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-slate-400">{score.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Work Environment */}
+      <div className="mb-6 pb-6 border-b border-slate-700">
+        <h4 className="text-xs font-semibold text-slate-300 mb-3 uppercase">Work Environment</h4>
+        <div className="space-y-2">
+          {jobRole.autonomy_level && (
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400">Autonomy</span>
+              <span className="text-slate-300 font-medium">{jobRole.autonomy_level}</span>
+            </div>
+          )}
+          {jobRole.collaboration_style && (
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400">Collaboration</span>
+              <span className="text-slate-300 font-medium">{jobRole.collaboration_style}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Required Values */}
+      {jobRole.required_values && jobRole.required_values.length > 0 && (
+        <div className="mb-6 pb-6 border-b border-slate-700">
+          <h4 className="text-xs font-semibold text-slate-300 mb-3 uppercase">Required Values</h4>
+          <div className="flex flex-wrap gap-2">
+            {jobRole.required_values.map((value: string) => (
+              <span
+                key={value}
+                className="px-2 py-1 bg-indigo-900/30 border border-indigo-600/50 rounded text-xs font-medium text-indigo-300"
+              >
+                {value}
+              </span>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Right Column */}
-        <div className="space-y-4">
-          {/* Templates */}
-          <Card className="border border-gray-200">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Template Library</CardTitle></CardHeader>
-            <CardContent className="space-y-1.5">
-              {templates.map((t) => (
-                <Button
-                  key={t.id}
-                  variant={selectedTemplate === t.id ? "default" : "outline"}
-                  size="sm"
-                  className="w-full justify-start text-xs h-8"
-                  onClick={() => applyTemplate(t)}
-                >
-                  {t.name}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Application Count */}
+      <div className="bg-indigo-900/20 border border-indigo-600/30 rounded-lg p-4 text-center">
+        <p className="text-xs text-indigo-300 mb-1">Applications</p>
+        <p className="text-2xl font-bold text-indigo-400">{applicationCount}</p>
+      </div>
+    </div>
+  );
+}
 
-          {/* OS Profile Builder */}
-          <Card className="border border-gray-200">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">OS Profile Builder</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {dimensions.map(({ label, key }) => (
-                <div key={key}>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-gray-600">{label}</span>
-                    <span className="font-semibold text-indigo-600">{osProfile[key]}</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
-                    <div className="bg-indigo-600 h-1.5 rounded-full transition-all" style={{ width: `${osProfile[key]}%` }} />
-                  </div>
-                  <input type="range" min={0} max={100} value={osProfile[key]} onChange={(e) => setOsProfile({ ...osProfile, [key]: Number(e.target.value) })} className="w-full h-1 mt-1 cursor-pointer accent-indigo-600" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+export default function JobStudio() {
+  const { jobRoles, loading, error } = useJobRoles();
+  const { applications } = useApplications();
 
-          {/* Distribution Channels */}
-          <Card className="border border-gray-200">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Distribution Channels</CardTitle></CardHeader>
-            <CardContent className="space-y-1.5">
-              {(Object.entries(channels) as [string, boolean][]).map(([key, on]) => (
-                <label key={key} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 px-1 rounded">
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={(e) => setChannels({ ...channels, [key]: e.target.checked })}
-                    className="w-3.5 h-3.5 rounded border-gray-300 accent-indigo-600"
-                  />
-                  <span className="text-xs text-gray-700 capitalize">{key === "careers" ? "Company Careers" : key === "referrals" ? "Internal Referrals" : key === "university" ? "University Partners" : key === "diversity" ? "Diversity Networks" : key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                </label>
-              ))}
-            </CardContent>
-          </Card>
+  const applicationCountByRole = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    applications.forEach((app) => {
+      counts[app.job_role_id] = (counts[app.job_role_id] || 0) + 1;
+    });
+    return counts;
+  }, [applications]);
+
+  const openRoles = jobRoles.filter((role) => role.status === 'open');
+  const closedRoles = jobRoles.filter((role) => role.status === 'closed');
+  const draftRoles = jobRoles.filter((role) => role.status === 'draft');
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
+        {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-emerald-900/20 border border-emerald-600/30 rounded-lg p-6">
+          <p className="text-emerald-300 text-sm font-medium mb-2">Open Roles</p>
+          {loading ? (
+            <div className="h-10 bg-slate-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-4xl font-bold text-emerald-400">{openRoles.length}</p>
+          )}
+        </div>
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+          <p className="text-slate-400 text-sm font-medium mb-2">Draft Roles</p>
+          {loading ? (
+            <div className="h-10 bg-slate-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-4xl font-bold text-slate-300">{draftRoles.length}</p>
+          )}
+        </div>
+        <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-6">
+          <p className="text-red-300 text-sm font-medium mb-2">Closed Roles</p>
+          {loading ? (
+            <div className="h-10 bg-slate-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-4xl font-bold text-red-400">{closedRoles.length}</p>
+          )}
         </div>
       </div>
 
-      {/* Inclusive Language Scanner */}
-      <Card className="border border-gray-200">
-        <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Inclusive Language Scanner</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-medium block mb-1.5">Job Description</label>
-              <textarea
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                className="w-full h-28 p-2.5 border border-gray-200 rounded-md text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-              />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-widest text-gray-400 font-medium block mb-1.5">Suggestions</label>
-              <div className="space-y-2">
-                {languageSuggestions.map((s, i) => (
-                  <div key={i} className={`p-2 rounded border text-xs ${s.type === "warning" ? "bg-amber-50 border-amber-200" : "bg-green-50 border-green-200"}`}>
-                    <span className="mr-1.5">{s.type === "warning" ? "⚠" : "✓"}</span>
-                    <span className="font-medium text-gray-900">"{s.original}"</span>
-                    <span className="text-gray-600 ml-1">— {s.suggestion}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Open Roles Section */}
+      <div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-white">Open Positions</h2>
+          <p className="text-slate-400 text-sm mt-1">
+            {openRoles.length} role{openRoles.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-slate-800 border border-slate-700 rounded-lg p-6 h-96 animate-pulse"
+              ></div>
+            ))}
           </div>
-          <Button size="sm" className="text-xs h-8 mt-3 bg-gray-900 hover:bg-gray-800">Publish Job Posting</Button>
-        </CardContent>
-      </Card>
+        ) : openRoles.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {openRoles.map((role) => (
+              <JobRoleCard
+                key={role.id}
+                jobRole={role}
+                applicationCount={applicationCountByRole[role.id] || 0}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-slate-800/50 border border-slate-700 rounded-lg">
+            <p className="text-slate-400 text-lg">No open positions</p>
+          </div>
+        )}
+      </div>
+
+      {/* Draft Roles Section */}
+      {draftRoles.length > 0 && (
+        <div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white">Draft Positions</h2>
+            <p className="text-slate-400 text-sm mt-1">{draftRoles.length} role{draftRoles.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {draftRoles.map((role) => (
+              <JobRoleCard
+                key={role.id}
+                jobRole={role}
+                applicationCount={applicationCountByRole[role.id] || 0}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Closed Roles Section */}
+      {closedRoles.length > 0 && (
+        <div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white">Closed Positions</h2>
+            <p className="text-slate-400 text-sm mt-1">{closedRoles.length} role{closedRoles.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {closedRoles.map((role) => (
+              <JobRoleCard
+                key={role.id}
+                jobRole={role}
+                applicationCount={applicationCountByRole[role.id] || 0}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
