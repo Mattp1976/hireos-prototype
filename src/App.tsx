@@ -9,6 +9,10 @@ import { RoleBuilder } from "@/pages/RoleBuilder";
 import { SimulatedCollab } from "@/pages/SimulatedCollab";
 import { ShareProfile } from "@/pages/ShareProfile";
 import { Landing } from "@/pages/Landing";
+import { Pipeline } from "@/pages/Pipeline";
+import { InterviewHub } from "@/pages/InterviewHub";
+import { JobStudio } from "@/pages/JobStudio";
+import { Analytics } from "@/pages/Analytics";
 import { candidates, roles } from "@/data/sampleData";
 
 type View =
@@ -19,7 +23,11 @@ type View =
   | { type: "upload" }
   | { type: "role-builder" }
   | { type: "simulate" }
-  | { type: "share" };
+  | { type: "share" }
+  | { type: "pipeline" }
+  | { type: "interviews" }
+  | { type: "jobs" }
+  | { type: "analytics" };
 
 function App() {
   const [view, setView] = useState<View>({ type: "landing" });
@@ -80,6 +88,10 @@ function App() {
       case "role-builder":
       case "simulate":
       case "share":
+      case "pipeline":
+      case "interviews":
+      case "jobs":
+      case "analytics":
         return null;
       case "candidate": {
         const c = candidates.find((x) => x.id === view.id);
@@ -160,6 +172,39 @@ function App() {
               >
                 Dashboard
               </Button>
+              <Button
+                variant={isActive("pipeline") ? "secondary" : "ghost"}
+                size="sm"
+                className="text-[11px] h-7 px-2.5"
+                onClick={() => setView({ type: "pipeline" })}
+              >
+                Pipeline
+              </Button>
+              <Button
+                variant={isActive("interviews") ? "secondary" : "ghost"}
+                size="sm"
+                className="text-[11px] h-7 px-2.5"
+                onClick={() => setView({ type: "interviews" })}
+              >
+                Interviews
+              </Button>
+              <Button
+                variant={isActive("jobs") ? "secondary" : "ghost"}
+                size="sm"
+                className="text-[11px] h-7 px-2.5"
+                onClick={() => setView({ type: "jobs" })}
+              >
+                Jobs
+              </Button>
+              <Button
+                variant={isActive("analytics") ? "secondary" : "ghost"}
+                size="sm"
+                className="text-[11px] h-7 px-2.5"
+                onClick={() => setView({ type: "analytics" })}
+              >
+                Analytics
+              </Button>
+              <Separator orientation="vertical" className="h-4 mx-0.5" />
               <Button
                 variant={isActive("upload") ? "secondary" : "ghost"}
                 size="sm"
@@ -271,6 +316,10 @@ function App() {
         {view.type === "role-builder" && <RoleBuilder />}
         {view.type === "simulate" && <SimulatedCollab />}
         {view.type === "share" && <ShareProfile />}
+        {view.type === "pipeline" && <Pipeline />}
+        {view.type === "interviews" && <InterviewHub />}
+        {view.type === "jobs" && <JobStudio />}
+        {view.type === "analytics" && <Analytics />}
       </main>
     </div>
   );
