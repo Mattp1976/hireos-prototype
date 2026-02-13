@@ -45,13 +45,13 @@ function ApplicationCard({ application, onUpdateStage, isUpdating }: any) {
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-400">Overall Fit</span>
           <span className="text-sm font-bold text-indigo-400">
-            {Math.round(application.overall_fit * 100)}%
+            {Math.round(application.overall_fit)}%
           </span>
         </div>
         <div className="mt-1 w-full bg-slate-600 rounded-full h-1.5">
           <div
             className="bg-gradient-to-r from-indigo-600 to-violet-600 h-1.5 rounded-full"
-            style={{ width: `${application.overall_fit * 100}%` }}
+            style={{ width: `${application.overall_fit}%` }}
           ></div>
         </div>
       </div>
@@ -59,15 +59,15 @@ function ApplicationCard({ application, onUpdateStage, isUpdating }: any) {
       <div className="space-y-2 mb-4">
         <div className="flex justify-between text-xs">
           <span className="text-slate-400">Cognitive</span>
-          <span className="text-slate-300">{Math.round(application.cognitive_match * 100)}%</span>
+          <span className="text-slate-300">{Math.round(application.cognitive_match)}%</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-slate-400">Communication</span>
-          <span className="text-slate-300">{Math.round(application.communication_match * 100)}%</span>
+          <span className="text-slate-300">{Math.round(application.communication_match)}%</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-slate-400">Values</span>
-          <span className="text-slate-300">{Math.round(application.values_alignment * 100)}%</span>
+          <span className="text-slate-300">{Math.round(application.values_alignment)}%</span>
         </div>
       </div>
 
@@ -77,7 +77,7 @@ function ApplicationCard({ application, onUpdateStage, isUpdating }: any) {
           className="w-full px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white text-xs font-medium rounded transition flex items-center justify-between"
         >
           <span>Change Stage</span>
-          <span>▼</span>
+          <span>â¼</span>
         </button>
 
         {showMenu && (

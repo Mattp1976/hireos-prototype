@@ -34,9 +34,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Session restoration with timeout
+    const sessionTimeout = setTimeout(() => {
+      console.warn('Session restoration timed out');
+      setLoading(false);
+    }, 5000);
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(sessionTimeout);
       setUser(session?.user ?? null);
-      if (session?.user) { fetchUserProfile(session.user.id); } else { setLoading(false); }
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    }).catch(() => {
+      clearTimeout(sessionTimeout);
+      setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);

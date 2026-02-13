@@ -44,7 +44,7 @@ function RecentApplicationItem({ app }: any) {
         <span className={`px-3 py-1 rounded text-xs font-medium text-white capitalize ${stageColors[app.stage] || 'bg-slate-600'}`}>
           {app.stage}
         </span>
-        <span className="text-sm font-bold text-indigo-400">{Math.round(app.overall_fit * 100)}%</span>
+        <span className="text-sm font-bold text-indigo-400">{Math.round(app.overall_fit)}%</span>
       </div>
     </div>
   );
@@ -112,25 +112,25 @@ export default function Dashboard() {
         <StatCard
           label="Total Candidates"
           value={candidates.length}
-          icon="👥"
+          icon="ð¥"
           loading={candidatesLoading}
         />
         <StatCard
           label="Open Roles"
           value={openRoles}
-          icon="💼"
+          icon="ð¼"
           loading={jobRolesLoading}
         />
         <StatCard
           label="In Pipeline"
           value={applications.length}
-          icon="🔄"
+          icon="ð"
           loading={applicationsLoading}
         />
         <StatCard
           label="Interviews This Week"
           value={interviewsThisWeek}
-          icon="🎤"
+          icon="ð¤"
           loading={interviewsLoading}
         />
       </div>

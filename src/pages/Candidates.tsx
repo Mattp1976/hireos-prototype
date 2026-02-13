@@ -15,7 +15,7 @@ function CandidateCard({ candidate, onSelect }: any) {
         </div>
         <div className="text-right">
           <div className="inline-block px-3 py-1 bg-indigo-900/30 border border-indigo-600/50 rounded text-xs font-medium text-indigo-300">
-            OS: {Math.round(candidate.os_strength * 100)}%
+            OS: {Math.round(candidate.assessment?.overall_score || 0)}%
           </div>
         </div>
       </div>
@@ -25,9 +25,9 @@ function CandidateCard({ candidate, onSelect }: any) {
       )}
 
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-slate-400">📍 {candidate.location || 'Unknown'}</span>
+        <span className="text-xs text-slate-400">ð {candidate.location || 'Unknown'}</span>
         <span className="text-xs font-medium text-slate-400">
-          Consistency: {Math.round(candidate.consistency * 100)}%
+          Consistency: {Math.round(candidate.consistency)}%
         </span>
       </div>
 
@@ -37,19 +37,19 @@ function CandidateCard({ candidate, onSelect }: any) {
             <div className="text-center">
               <p className="text-xs text-slate-400 mb-1">Analytical</p>
               <p className="text-sm font-bold text-indigo-400">
-                {Math.round(candidate.assessment.cognitive_analytical * 10)}/10
+                {Math.round(candidate.assessment.cognitive_analytical / 10)}/10
               </p>
             </div>
             <div className="text-center">
               <p className="text-xs text-slate-400 mb-1">Creative</p>
               <p className="text-sm font-bold text-violet-400">
-                {Math.round(candidate.assessment.cognitive_creative * 10)}/10
+                {Math.round(candidate.assessment.cognitive_creative / 10)}/10
               </p>
             </div>
             <div className="text-center">
               <p className="text-xs text-slate-400 mb-1">Overall</p>
               <p className="text-sm font-bold text-emerald-400">
-                {Math.round(candidate.assessment.overall_score * 100)}%
+                {Math.round(candidate.assessment.overall_score)}%
               </p>
             </div>
           </div>
@@ -83,7 +83,7 @@ function CandidateDetailModal({ candidate, onClose }: any) {
             onClick={onClose}
             className="text-slate-400 hover:text-white text-2xl transition"
           >
-            ✕
+            â
           </button>
         </div>
 
@@ -97,11 +97,11 @@ function CandidateDetailModal({ candidate, onClose }: any) {
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">OS Strength</p>
-              <p className="text-white font-medium">{Math.round(candidate.os_strength * 100)}%</p>
+              <p className="text-white font-medium">{Math.round(candidate.assessment?.overall_score || 0)}%</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">Consistency</p>
-              <p className="text-white font-medium">{Math.round(candidate.consistency * 100)}%</p>
+              <p className="text-white font-medium">{Math.round(candidate.consistency)}%</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-1">Tagline</p>

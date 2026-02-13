@@ -20,7 +20,7 @@ function BarChart({ data, label }: any) {
             <div
               className="bg-gradient-to-r from-indigo-600 to-violet-600 h-3 rounded-full transition-all duration-300"
               style={{
-                width: `${Math.min(((item.value || item.count || 0) / maxValue) * 100, 100)}%`,
+                width: `${Math.min(((item.value || item.count || 0) / maxValue) , 100)}%`,
               }}
             ></div>
           </div>
@@ -68,25 +68,25 @@ export default function Analytics() {
           <MetricCard
             label="Total Candidates"
             value={analytics?.totalCandidates || 0}
-            icon="👥"
+            icon="ð¥"
             loading={loading}
           />
           <MetricCard
             label="Total Applications"
             value={analytics?.totalApplications || 0}
-            icon="📋"
+            icon="ð"
             loading={loading}
           />
           <MetricCard
             label="Open Roles"
             value={analytics?.totalOpenRoles || 0}
-            icon="💼"
+            icon="ð¼"
             loading={loading}
           />
           <MetricCard
             label="Avg Days to Hire"
             value={analytics?.averageTimeToHire || 0}
-            icon="⏱️"
+            icon="â±ï¸"
             loading={loading}
           />
         </div>
@@ -127,7 +127,7 @@ export default function Analytics() {
             <BarChart
               data={analytics.avgFitScoreByDepartment.map((dept) => ({
                 department: dept.department,
-                value: Math.round(dept.avgFit * 100),
+                value: Math.round(dept.avgFit ),
               }))}
             />
           </div>
@@ -155,12 +155,12 @@ export default function Analytics() {
                     <div className="w-32 bg-slate-700 rounded-full h-2">
                       <div
                         className="bg-gradient-to-r from-emerald-600 to-emerald-500 h-2 rounded-full"
-                        style={{ width: `${candidate.overallScore * 100}%` }}
+                        style={{ width: `${candidate.overallScore }%` }}
                       ></div>
                     </div>
                   </div>
                   <span className="text-sm font-bold text-emerald-400">
-                    {Math.round(candidate.overallScore * 100)}%
+                    {Math.round(candidate.overallScore )}%
                   </span>
                 </div>
               </div>
@@ -177,7 +177,7 @@ export default function Analytics() {
             <div className="space-y-3">
               {analytics.pipelineDistribution.slice(0, 3).map((stage) => {
                 const percentage = Math.round(
-                  (stage.count / (analytics.totalApplications || 1)) * 100
+                  (stage.count / (analytics.totalApplications || 1)) 
                 );
                 return (
                   <div key={stage.stage}>
