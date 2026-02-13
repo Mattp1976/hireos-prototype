@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
+  const isSigningIn = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(sessionTimeout);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id, true);
       } else {
         setLoading(false);
       }
@@ -64,9 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (cancelled) return;
+      if (event === 'INITIAL_SESSION') return;
+
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchUserProfile(session.user.id);
+        await fetchUserProfile(session.user.id, false);
       } else {
         setProfile(null);
         setOrganisation(null);
@@ -81,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function fetchUserProfile(userId: string) {
+  async function fetchUserProfile(userId: string, isRestoring: boolean) {
     try {
       const { data: userProfile, error: profileError } = await supabase
         .from('users')
@@ -103,23 +106,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOrganisation(org);
       }
     } catch (error) {
-      console.error('Error fetching user profile, clearing session:', error);
+      console.error('Error fetching user profile:', error);
       setProfile(null);
       setOrganisation(null);
-      setUser(null);
-      await supabase.auth.signOut().catch(() => {});
+      if (isRestoring) {
+        setUser(null);
+        await supabase.auth.signOut().catch(() => {});
+      }
     } finally {
       setLoading(false);
+      isSigningIn.current = false;
     }
   }
 
   async function signIn(email: string, password: string) {
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } finally {
+    isSigningIn.current = true;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
       setLoading(false);
+      isSigningIn.current = false;
+      throw error;
     }
   }
 
