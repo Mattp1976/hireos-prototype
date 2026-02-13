@@ -27,6 +27,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+  ]);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -46,23 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function loadProfile(userId: string): Promise<boolean> {
       try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 4000);
-        const { data: p, error: pe } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .single()
-          .abortSignal(controller.signal);
-        clearTimeout(timer);
+        const { data: p, error: pe } = await withTimeout(
+          supabase.from('users').select('*').eq('id', userId).single(),
+          4000
+        );
         if (pe || !p) throw pe || new Error('No profile');
         if (!active) return false;
         setProfile(p);
-        const { data: o } = await supabase
-          .from('organisations')
-          .select('*')
-          .eq('id', p.org_id)
-          .single();
+        const { data: o } = await withTimeout(
+          supabase.from('organisations').select('*').eq('id', p.org_id).single(),
+          4000
+        );
         if (!active) return false;
         setOrganisation(o);
         return true;
@@ -108,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Safety timeout — never stay on Loading forever
+    // Safety timeout
     const safetyTimeout = setTimeout(() => {
       console.warn('Auth safety timeout, forcing loading=false');
       setDone();
@@ -130,12 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       throw error;
     }
-    // onAuthStateChange SIGNED_IN will finish the flow
   }
 
   async function signOut() {
     await supabase.auth.signOut();
-    // onAuthStateChange SIGNED_OUT will clean up
   }
 
   return (
