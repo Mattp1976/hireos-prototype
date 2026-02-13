@@ -34,12 +34,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Session restoration with timeout
+    let cancelled = false;
+
     const sessionTimeout = setTimeout(() => {
-      console.warn('Session restoration timed out');
-      setLoading(false);
+      if (!cancelled) {
+        console.warn('Session restoration timed out, clearing session');
+        supabase.auth.signOut().catch(() => {});
+        setUser(null);
+        setProfile(null);
+        setOrganisation(null);
+        setLoading(false);
+      }
     }, 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
       clearTimeout(sessionTimeout);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -48,44 +57,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     }).catch(() => {
+      if (cancelled) return;
       clearTimeout(sessionTimeout);
       setLoading(false);
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (cancelled) return;
       setUser(session?.user ?? null);
-      if (session?.user) { await fetchUserProfile(session.user.id); } else { setProfile(null); setOrganisation(null); setLoading(false); }
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setOrganisation(null);
+        setLoading(false);
+      }
     });
-    return () => subscription?.unsubscribe();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(sessionTimeout);
+      subscription?.unsubscribe();
+    };
   }, []);
 
   async function fetchUserProfile(userId: string) {
     try {
-      const { data: userProfile, error: profileError } = await supabase.from('users').select('*').eq('id', userId).single();
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
       if (profileError) throw profileError;
       setProfile(userProfile);
+
       if (userProfile?.org_id) {
-        const { data: org, error: orgError } = await supabase.from('organisations').select('*').eq('id', userProfile.org_id).single();
+        const { data: org, error: orgError } = await supabase
+          .from('organisations')
+          .select('*')
+          .eq('id', userProfile.org_id)
+          .single();
+
         if (orgError) throw orgError;
         setOrganisation(org);
       }
-    } catch (error) { console.error('Error fetching user profile:', error); setProfile(null); setOrganisation(null); } finally { setLoading(false); }
+    } catch (error) {
+      console.error('Error fetching user profile, clearing session:', error);
+      setProfile(null);
+      setOrganisation(null);
+      setUser(null);
+      await supabase.auth.signOut().catch(() => {});
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function signIn(email: string, password: string) {
     setLoading(true);
-    try { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; } finally { setLoading(false); }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function signOut() {
     setLoading(true);
-    try { await supabase.auth.signOut(); setUser(null); setProfile(null); setOrganisation(null); } finally { setLoading(false); }
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+      setOrganisation(null);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  return (<AuthContext.Provider value={{ user, profile, organisation, loading, signIn, signOut }}>{children}</AuthContext.Provider>);
+  return (
+    <AuthContext.Provider value={{ user, profile, organisation, loading, signIn, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) { throw new Error('useAuth must be used within AuthProvider'); }
+  if (context === undefined) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
   return context;
 }
